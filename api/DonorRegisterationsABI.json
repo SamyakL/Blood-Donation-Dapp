@@ -30,31 +30,27 @@
         "type": "event"
     },
     {
-        "inputs": [
+        "inputs": [],
+        "name": "donorCount",
+        "outputs": [
             {
                 "internalType": "uint256",
-                "name": "id",
+                "name": "",
                 "type": "uint256"
-            },
-            {
-                "internalType": "string",
-                "name": "name",
-                "type": "string"
-            },
-            {
-                "internalType": "string",
-                "name": "bloodType",
-                "type": "string"
             }
         ],
-        "name": "registerDonor",
-        "outputs": [],
-        "stateMutability": "nonpayable",
+        "stateMutability": "view",
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "donorCount",
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "donorIDS",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -161,6 +157,25 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "user",
+                "type": "address"
+            }
+        ],
+        "name": "getUserId",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "owner",
         "outputs": [
@@ -171,6 +186,29 @@
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "id",
+                "type": "uint256"
+            },
+            {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "bloodType",
+                "type": "string"
+            }
+        ],
+        "name": "registerDonor",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     }
 ]

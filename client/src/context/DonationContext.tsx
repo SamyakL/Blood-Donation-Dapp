@@ -2,12 +2,14 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { v4 as uuidv4 } from 'uuid';
 import { Donor, Donation } from '../types';
 import { useWallet } from './WalletContext';
-
+import { ethers } from 'ethers';
+import DonorRegisterationsABI from "../../../api/DonorRegisterationsABI.json"
+import RegisterDonationABI from "../../../api/RecordDonationsABI.json"
 interface DonationContextType {
   donors: Donor[];
   donations: Donation[];
   registerDonor: (name: string, bloodGroup: string) => Promise<void>;
-  addDonation: (donorId: string, units: number) => Promise<void>;
+  addDonation: (units: BigInt, date: string) => Promise<void>;
   getDonorById: (id: string) => Donor | undefined;
   getDonationsByDonorId: (donorId: string) => Donation[];
   searchDonors: (query: string) => Donor[];
@@ -31,7 +33,8 @@ export const DonationProvider: React.FC<DonationProviderProps> = ({ children }) 
   const [donors, setDonors] = useState<Donor[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
   const { wallet } = useWallet();
-
+  const contractAddress = "0x55044ce6E117F5E71aA1b338459385f02dACC3D0";
+  const registerDonationContract = "0xc6765Ea5A9F4356a58fB8aBE39d484904f54399f"
   // Load data from localStorage on component mount
   useEffect(() => {
     const storedDonors = localStorage.getItem('donors');
@@ -60,12 +63,43 @@ export const DonationProvider: React.FC<DonationProviderProps> = ({ children }) 
       throw new Error('Wallet not connected');
     }
 
+    // Check if user is already registered:
+    const { ethereum } = window;
+    if (!ethereum) {
+      throw new Error('Ethereum object not found. Make sure you have MetaMask installed.');
+    }
+
+    const provider = new ethers.BrowserProvider(ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(contractAddress, DonorRegisterationsABI, signer);
+
+    const existingDonorId = await contract.donorIDS(wallet.address);
+    if (existingDonorId) {
+      alert('Your wallet is already registered as a donor.');
+      return; // Exit the function if already registered
+    }
+
+    const _id = BigInt('0x' + uuidv4().replace(/-/g, '').slice(0, 6));
+
+    try {
+      const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+      await contract.connect(signer);
+      const tx = await contract.registerDonor(_id, name, bloodGroup);
+      await tx.wait();
+      console.log("Success!!");
+      console.log(tx);
+    }
+    catch (error) {
+      console.log("ERROR!!! : ")
+      console.log(error);
+    }
+
     // In a real DApp, this would be a blockchain transaction
     // For now, we'll simulate it with a delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     const newDonor: Donor = {
-      id: uuidv4(),
+      id: _id.toString(),
       name,
       bloodGroup,
       walletAddress: wallet.address,
@@ -76,33 +110,45 @@ export const DonationProvider: React.FC<DonationProviderProps> = ({ children }) 
     return;
   };
 
-  const addDonation = async (donorId: string, units: number) => {
+  const addDonation = async (units: BigInt, date: string) => {
     if (!wallet.connected) {
       throw new Error('Wallet not connected');
     }
 
-    const donor = donors.find(d => d.id === donorId);
-    if (!donor) {
-      throw new Error('Donor not found');
-    }
-
     // In a real DApp, this would be a blockchain transaction
     // For now, we'll simulate it with a delay and a fake transaction hash
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const txHash = `0x${Array.from({ length: 64 }, () =>
-      Math.floor(Math.random() * 16).toString(16)).join('')}`;
+    //await new Promise(resolve => setTimeout(resolve, 1000));
+    const { ethereum } = window;
+    if (!ethereum) {
+      throw new Error('Ethereum object not found. Make sure you have MetaMask installed.');
+    }
 
-    const newDonation: Donation = {
-      id: uuidv4(),
-      donorId,
-      donorName: donor.name,
-      bloodGroup: donor.bloodGroup,
-      units,
-      date: new Date().toISOString(),
-      transactionHash: txHash,
-    };
+    const provider = new ethers.BrowserProvider(ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(contractAddress, DonorRegisterationsABI, signer);
+    const donationContract = new ethers.Contract(registerDonationContract, RegisterDonationABI, signer);
+    contract.connect(signer);
 
-    setDonations(prevDonations => [...prevDonations, newDonation]);
+    try {
+      console.log("Trying to fecth id: ")
+
+      const _id = await contract.donorIDS(signer.address)
+
+      console.log(_id.toString())
+      if (_id == "0") {
+        alert("PLs register First");
+        return;
+      }
+      // _id = BigInt('0x' + uuidv4().replace(/-/g, '').slice(0, 6));
+      const tx = await donationContract.recordDonations(_id, units, date);
+      await tx.wait();
+      console.log("Success!!");
+      console.log(tx);
+    } catch (error) {
+      console.log("error while registering your doantions: ")
+      console.log(error);
+    }
+
     return;
   };
 

@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Droplet, Users, PlusCircle, History } from 'lucide-react';
 import { useDonation } from '../context/DonationContext';
-import { provider, DonorRegisterations } from '../connection';
+import { DonorRegisterations, registerDonationAddress } from "../connection"
 import { useWallet } from '../context/WalletContext';
+import { ethers } from 'ethers';
+import RegisterDonationABI from "../../../api/RecordDonationsABI.json"
+
 const HomePage: React.FC = () => {
   const { donations } = useDonation();
   const [totalDonors, setTotalDonors] = useState<BigInt>(BigInt(0));
   const { wallet, connectWallet, disconnectWallet } = useWallet();
-
+  const [totalDonations, setTotalDonations] = useState<number>(0)
+  const registerDonationContract = "0xc6765Ea5A9F4356a58fB8aBE39d484904f54399f"
   useEffect(() => {
     const fetchTotalDonors = async () => {
       const count = await DonorRegisterations.donorCount();
@@ -16,6 +20,32 @@ const HomePage: React.FC = () => {
     };
 
     fetchTotalDonors();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalDonations = async () => {
+      if (!wallet.connected || !wallet.address) {
+        throw new Error('Wallet not connected');
+      }
+
+      // Check if user is already registered:
+      const { ethereum } = window;
+      if (!ethereum) {
+        throw new Error('Ethereum object not found. Make sure you have MetaMask installed.');
+      }
+
+      const provider = new ethers.BrowserProvider(ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(registerDonationContract, RegisterDonationABI, signer);
+      contract.connect(signer);
+
+      const donationCount = await contract.getAllDonations()
+      console.log("total donations: ")
+      console.log(donationCount);
+      setTotalDonations(donationCount.length);
+    };
+
+    fetchTotalDonations();
   }, []);
 
   // Calculate total units donated
@@ -59,14 +89,14 @@ const HomePage: React.FC = () => {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Total Donations</dt>
-                  <dd className="text-3xl font-semibold text-gray-900">{donations.length}</dd>
+                  <dd className="text-3xl font-semibold text-gray-900">{totalDonations}</dd>
                 </dl>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        {/* <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-red-100 rounded-md p-3">
@@ -80,9 +110,9 @@ const HomePage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        {/* <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-red-100 rounded-md p-3">
@@ -100,7 +130,7 @@ const HomePage: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Features */}

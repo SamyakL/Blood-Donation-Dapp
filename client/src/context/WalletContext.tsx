@@ -80,9 +80,8 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
-
       return () => {
-        if (window.ethereum.removeListener) {
+        if (window.ethereum && window.ethereum.removeListener) {
           window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
           window.ethereum.removeListener('chainChanged', handleChainChanged);
         }
