@@ -8,7 +8,12 @@ interface DonationCardProps {
 }
 
 const DonationCard: React.FC<DonationCardProps> = ({ donation }) => {
-  const formattedDate = new Date(donation.date).toLocaleDateString();
+
+  const donorId = donation.donorID; // Accessing the donor ID
+  const units = donation.units; // Accessing the units donated
+  const date = donation.date; // Accessing the date
+  console.log("donations in donation card component")
+  console.log(donorId)
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
@@ -18,35 +23,35 @@ const DonationCard: React.FC<DonationCardProps> = ({ donation }) => {
             <Droplet className="h-6 w-6 text-red-600" />
           </div>
           <div className="ml-4">
-            <h3 className="text-lg font-semibold text-gray-800">{donation.donorName}</h3>
+            <h3 className="text-lg font-semibold text-gray-800">{donorId.toString()}</h3>
             <div className="flex items-center text-sm text-gray-500">
               <span>Blood Group: {donation.bloodGroup}</span>
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center text-sm text-gray-500 mb-2">
           <Calendar className="h-4 w-4 mr-1" />
-          <span>Date: {formattedDate}</span>
+          <span>Date: {date}</span>
         </div>
-        
+
         <div className="flex items-center text-sm text-gray-500 mb-4">
-          <span className="font-medium">Units Donated: {donation.units}</span>
+          <span className="font-medium">Units Donated: {units.toString()}</span>
         </div>
-        
+
         <div className="flex items-center text-xs text-gray-500 mb-4">
           <Hash className="h-3 w-3 mr-1 flex-shrink-0" />
           <span className="truncate">Tx: {donation.transactionHash}</span>
         </div>
-        
+
         <div className="flex justify-between">
-          <Link 
+          <Link
             to={`/donor/${donation.donorId}`}
             className="text-red-600 hover:text-red-800 text-sm font-medium"
           >
             View Donor
           </Link>
-          <a 
+          <a
             href={`https://etherscan.io/tx/${donation.transactionHash}`}
             target="_blank"
             rel="noopener noreferrer"

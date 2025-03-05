@@ -1,14 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDonation } from '../context/DonationContext';
 import DonationCard from '../components/DonationCard';
 import { Calendar, SortDesc, SortAsc } from 'lucide-react';
 import { Donation } from '../types';
+import { ethers } from 'ethers';
+import RegisterDonationABI from "../../../api/RecordDonationsABI.json";
+import { useWallet } from '../context/WalletContext';
 
 const HistoryPage: React.FC = () => {
   const { donations } = useDonation();
+  const [fetchedDonations, setFetchedDonations] = useState<Donation[]>([]);
+  const { wallet } = useWallet();
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const registerDonationContract = "0xc6765Ea5A9F4356a58fB8aBE39d484904f54399f"
 
-  const sortedDonations = [...donations].sort((a, b) => {
+  useEffect(() => {
+    const fetchDonations = async () => {
+      if (!wallet.connected || !wallet.address) {
+        throw new Error('Wallet not connected');
+      }
+
+      const { ethereum } = window;
+      if (!ethereum) {
+        throw new Error('Ethereum object not found. Make sure you have MetaMask installed.');
+      }
+
+      const provider = new ethers.BrowserProvider(ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(registerDonationContract, RegisterDonationABI, signer);
+      contract.connect(signer);
+
+      const donationCount = await contract.getAllDonations();
+      setFetchedDonations(donationCount);
+    };
+
+    fetchDonations();
+  }, [wallet]);
+
+  const sortedDonations = [...fetchedDonations].sort((a, b) => {
     const dateA = new Date(a.date).getTime();
     const dateB = new Date(b.date).getTime();
     return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
